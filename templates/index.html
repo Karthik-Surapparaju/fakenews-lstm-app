@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fake News Detection App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 50px;
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .result-section {
+            margin-top: 20px;
+        }
+        textarea {
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="text-center mb-4">
+        <h1 class="text-primary">📰 Fake News Detector</h1>
+        <p class="text-muted">Paste a news article below to detect if it is real or fake.</p>
+    </div>
+
+    <div class="card shadow p-4">
+        <div class="form-group mb-3">
+            <label for="newsText" class="form-label">News Text</label>
+            <textarea class="form-control" id="newsText" rows="8" placeholder="Enter your news content here..."></textarea>
+            <small id="wordCount" class="form-text text-muted">0 words</small>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" onclick="predict()">🔍 Analyze</button>
+            <button class="btn btn-secondary" onclick="clearText()">🧹 Clear</button>
+        </div>
+
+        <div class="loading-spinner text-center mt-3">
+            <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <div class="result-section text-center mt-4">
+            <h4 id="result"></h4>
+            <div class="progress" style="height: 25px; display: none;" id="confidenceBarWrapper">
+                <div id="confidenceBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const newsText = document.getElementById('newsText');
+    const wordCount = document.getElementById('wordCount');
+    const result = document.getElementById('result');
+    const spinner = document.querySelector('.loading-spinner');
+    const confidenceBar = document.getElementById('confidenceBar');
+    const confidenceBarWrapper = document.getElementById('confidenceBarWrapper');
+
+    newsText.addEventListener('input', () => {
+        const words = newsText.value.trim().split(/\s+/);
+        wordCount.innerText = `${newsText.value.trim() ? words.length : 0} words`;
+    });
+
+    async function predict() {
+        const text = newsText.value.trim();
+        if (!text) {
+            alert("Please enter some news content.");
+            return;
+        }
+
+        result.innerText = "";
+        confidenceBarWrapper.style.display = "none";
+        spinner.style.display = "block";
+
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text })
+        });
+
+        const data = await response.json();
+        spinner.style.display = "none";
+
+        result.innerText = `🧠 Prediction: ${data.prediction}`;
+        confidenceBarWrapper.style.display = "block";
+        confidenceBar.style.width = `${(data.confidence * 100).toFixed(1)}%`;
+        confidenceBar.innerText = `${(data.confidence * 100).toFixed(1)}% Confidence`;
+        confidenceBar.classList.remove("bg-success", "bg-danger");
+        confidenceBar.classList.add(data.prediction === "FAKE" ? "bg-danger" : "bg-success");
+    }
+
+    function clearText() {
+        newsText.value = "";
+        wordCount.innerText = "0 words";
+        result.innerText = "";
+        confidenceBar.style.width = "0%";
+        confidenceBarWrapper.style.display = "none";
+    }
+</script>
+
+</body>
+</html>
