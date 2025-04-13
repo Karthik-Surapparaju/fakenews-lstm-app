@@ -1,1 +1,6 @@
 venv/ 
+lstm_fakenews_model.h5
+tokenizer.pkl
+fake_or_real_news.csv
+*.7z
+venv/
